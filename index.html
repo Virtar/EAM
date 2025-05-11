@@ -736,117 +736,122 @@
         updateTangentLine(0);
         
         // Sección 3: Aplicaciones de la Derivada
-        const physicsCtx = document.getElementById('physicsCanvas').getContext('2d');
-        const physicsChart = new Chart(physicsCtx, {
-            type: 'line',
-            data: {
-                datasets: [
-                    {
-                        label: 'Posición',
-                        data: Array.from({length: 101}, (_, i) => {
-                            const t = i / 10;
-                            return {x: t, y: 2 * t * t};
-                        }),
-                        borderColor: colors.function,
-                        backgroundColor: 'transparent',
-                        pointRadius: 0,
-                        tension: 0.4
-                    },
-                    {
-                        label: 'Velocidad (derivada)',
-                        data: Array.from({length: 101}, (_, i) => {
-                            const t = i / 10;
-                            return {x: t, y: 4 * t};
-                        }),
-                        borderColor: colors.derivative,
-                        backgroundColor: 'transparent',
-                        pointRadius: 0,
-                        borderDash: [5, 5]
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                aspectRatio: 1.5,
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Tiempo (s)'
+        function initPhysicsChart() {
+            const physicsCtx = document.getElementById('physicsCanvas').getContext('2d');
+            return new Chart(physicsCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 11}, (_, i) => i),
+                    datasets: [
+                        {
+                            label: 'Posición',
+                            data: Array.from({length: 11}, (_, i) => 2 * i * i),
+                            borderColor: colors.function,
+                            backgroundColor: 'transparent',
+                            pointRadius: 2,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Velocidad (derivada)',
+                            data: Array.from({length: 11}, (_, i) => 4 * i),
+                            borderColor: colors.derivative,
+                            backgroundColor: 'transparent',
+                            pointRadius: 2,
+                            borderDash: [5, 5]
                         }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Posición (m) / Velocidad (m/s)'
-                        }
-                    }
+                    ]
                 },
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Física: Posición y su derivada (velocidad)'
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1.5,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Tiempo (s)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Posición (m) / Velocidad (m/s)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Física: Posición y su derivada (velocidad)'
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
         
-        const economicsCtx = document.getElementById('economicsCanvas').getContext('2d');
-        const economicsChart = new Chart(economicsCtx, {
-            type: 'line',
-            data: {
-                datasets: [
-                    {
-                        label: 'Costo Total',
-                        data: Array.from({length: 101}, (_, i) => {
-                            const q = i;
-                            // Función de costo: 100 + 10q - 0.1q² + 0.01q³
-                            return {x: q, y: 100 + 10 * q - 0.1 * q * q + 0.01 * q * q * q};
-                        }),
-                        borderColor: colors.function,
-                        backgroundColor: 'transparent',
-                        pointRadius: 0,
-                        tension: 0.4
-                    },
-                    {
-                        label: 'Costo Marginal (derivada)',
-                        data: Array.from({length: 101}, (_, i) => {
-                            const q = i;
-                            // Derivada: 10 - 0.2q + 0.03q²
-                            return {x: q, y: 10 - 0.2 * q + 0.03 * q * q};
-                        }),
-                        borderColor: colors.derivative,
-                        backgroundColor: 'transparent',
-                        pointRadius: 0,
-                        borderDash: [5, 5]
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                aspectRatio: 1.5,
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Cantidad (unidades)'
+        function initEconomicsChart() {
+            const economicsCtx = document.getElementById('economicsCanvas').getContext('2d');
+            return new Chart(economicsCtx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 11}, (_, i) => i * 10),
+                    datasets: [
+                        {
+                            label: 'Costo Total',
+                            data: Array.from({length: 11}, (_, i) => {
+                                const q = i * 10;
+                                // Función de costo: 100 + 10q - 0.1q² + 0.01q³
+                                return 100 + 10 * q - 0.1 * q * q + 0.01 * q * q * q / 10;
+                            }),
+                            borderColor: colors.function,
+                            backgroundColor: 'transparent',
+                            pointRadius: 2,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Costo Marginal (derivada)',
+                            data: Array.from({length: 11}, (_, i) => {
+                                const q = i * 10;
+                                // Derivada: 10 - 0.2q + 0.03q²
+                                return 10 - 0.2 * q + 0.03 * q * q / 10;
+                            }),
+                            borderColor: colors.derivative,
+                            backgroundColor: 'transparent',
+                            pointRadius: 2,
+                            borderDash: [5, 5]
                         }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Costo ($)'
-                        }
-                    }
+                    ]
                 },
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Economía: Costo total y Costo marginal'
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 1.5,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Cantidad (unidades)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Costo ($)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Economía: Costo total y Costo marginal'
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+        
+        let physicsChart;
+        let economicsChart;
         
         // Aplicaciones interactivas
         const applicationDescriptions = {
@@ -892,6 +897,17 @@
             descriptionDiv.innerHTML = applicationDescriptions[selectedApp];
             descriptionDiv.style.display = 'block';
             descriptionDiv.classList.add('fade-in');
+            
+            // Asegurarse de que los gráficos se rendericen correctamente
+            if (selectedApp === 'physics' && !physicsChart) {
+                physicsChart = initPhysicsChart();
+            } else if (selectedApp === 'economics' && !economicsChart) {
+                economicsChart = initEconomicsChart();
+            }
+            
+            // Forzar actualización de los gráficos
+            if (physicsChart) physicsChart.update();
+            if (economicsChart) economicsChart.update();
         });
         
         // Sección 4: Optimización
@@ -1174,6 +1190,8 @@
         // Inicializar visualizaciones
         updateFunctionDerivative('cubic');
         drawOptimizationProblem(25);
+        physicsChart = initPhysicsChart();
+        economicsChart = initEconomicsChart();
         
         // Efecto de revelación al hacer scroll
         function revealSections() {
