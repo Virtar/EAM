@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cálculo Diferencial Interactivo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --accent: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        
+        nav {
+            background-color: var(--dark);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .nav-container {
+            display: flex;
+            justify-content: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 1rem 1.5rem;
+            display: inline-block;
+            transition: background-color 0.3s;
+            font-weight: 500;
+        }
+        
+        nav a:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .active {
+            border-bottom: 3px solid var(--secondary);
+        }
+        
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        section {
+            margin-bottom: 4rem;
+            padding: 2rem;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.5s, transform 0.5s;
+        }
+        
+        section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        h2 {
+            color: var(--primary);
+            border-bottom: 2px solid var(--secondary);
+            padding-bottom: 0.5rem;
+            margin-top: 0;
+        }
+        
+        .graph-container {
+            background-color: rgba(236, 240, 241, 0.5);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        canvas {
+            width: 100%;
+            max-height: 400px;
+            background-color: white;
+            border-radius: 4px;
+        }
+        
+        .interactive-controls {
+            margin: 1rem 0;
+            padding: 1rem;
+            background-color: rgba(236, 240, 241, 0.7);
+            border-radius: 8px;
+        }
+        
+        button, select, input {
+            padding: 0.5rem 1rem;
+            margin: 0.5rem;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--primary);
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            background-color: transparent;
+        }
+        
+        button:hover, select:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+        
+        .flex-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .flex-item {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .formula {
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--primary);
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+        }
+        
+        .example-box {
+            border: 1px solid var(--primary);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        .highlight {
+            color: var(--accent);
+            font-weight: bold;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary);
+        }
+        
+        .btn-accent {
+            background-color: var(--accent);
+        }
+        
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted var(--dark);
+            cursor: help;
+        }
+        
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 0.5rem;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        .animation-container {
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            margin: 2rem 0;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .fade-in {
+            animation: fadeIn 1s;
+        }
+        
+        footer {
+            background-color: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        
+        /* Adaptabilidad para móviles */
+        @media (max-width: 768px) {
+            .flex-container {
+                flex-direction: column;
+            }
+            
+            nav a {
+                padding: 0.7rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Cálculo Diferencial Interactivo</h1>
+        <p>Explorando la derivada, sus aplicaciones y conexiones</p>
+    </header>
+    
+    <nav>
+        <div class="nav-container">
+            <a href="#limite-derivada" class="nav-link">Límite y Derivada</a>
+            <a href="#que-es-derivada" class="nav-link">¿Qué es la Derivada?</a>
+            <a href="#aplicaciones" class="nav-link">Aplicaciones</a>
+            <a href="#optimizacion" class="nav-link">Optimización</a>
+            <a href="#grafica-derivada" class="nav-link">Función y su Derivada</a>
+        </div>
+    </nav>
+    
+    <main>
+        <section id="limite-derivada">
+            <h2>Relación entre el Límite y la Derivada</h2>
+            
+            <div class="flex-container">
+                <div class="flex-item">
+                    <p>La derivada de una función en un punto es el <span class="highlight">límite</span> de la razón de cambio promedio cuando el intervalo de cambio tiende a cero. Matemáticamente, se expresa como:</p>
+                    
+                    <div class="formula">
+                        f'(x) = lim<sub>h→0</sub> [f(x+h) - f(x)] / h
+                    </div>
+                    
+                    <p>Esta definición muestra que la derivada es realmente una aplicación del concepto de límite. Sin el concepto de límite, no podríamos definir la derivada.</p>
+                </div>
+                
+                <div class="flex-item">
+                    <div class="graph-container">
+                        <canvas id="limitDerivativeCanvas"></canvas>
+                    </div>
+                    
+                    <div class="interactive-controls">
+                        <label for="h-value">Valor de h: <span id="h-display">1.00</span></label>
+                        <input type="range" id="h-value" min="0.01" max="2" step="0.01" value="1">
+                        <button id="animate-limit" class="btn-primary">Animar aproximación</button>
+                    </div>
+                </div>
+            </div>
+            
+            <p>En el gráfico anterior, puedes ver cómo a medida que h se aproxima a cero, la pendiente de la secante (línea rosa) se aproxima a la pendiente de la tangente (línea verde), que es precisamente la derivada en ese punto.</p>
+        </section>
+        
+        <section id="que-es-derivada">
+            <h2>¿Qué es la Derivada?</h2>
+            
+            <div class="flex-container">
+                <div class="flex-item">
+                    <p>La derivada de una función en un punto representa la <span class="highlight">tasa de cambio instantánea</span> de la función en ese punto. Geométricamente, corresponde a la pendiente de la recta tangente a la curva en dicho punto.</p>
+                    
+                    <p>Si pensamos en una función como una relación que describe cómo una variable depende de otra, la derivada nos dice <span class="highlight">qué tan rápido</span> cambia la función con respecto a su variable independiente.</p>
+                    
+                    <div class="formula">
+                        Si y = f(x), entonces f'(x) = dy/dx
+                    </div>
+                    
+                    <p>Intuitivamente, si f(x) representa la posición de un objeto en función del tiempo, entonces f'(x) representa su velocidad, y f''(x) (la segunda derivada) representa su aceleración.</p>
+                </div>
+                
+                <div class="flex-item">
+                    <div class="graph-container">
+                        <canvas id="derivativeDefinitionCanvas"></canvas>
+                    </div>
+                    
+                    <div class="interactive-controls">
+                        <label for="point-selector">Punto x:</label>
+                        <input type="range" id="point-selector" min="-3" max="3" step="0.1" value="0">
+                        <span id="point-value">0.0</span>
+                        <div id="slope-value">Pendiente: 0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="example-box">
+                <h3>Ejemplos de derivadas comunes:</h3>
+                <ul>
+                    <li>Si f(x) = x<sup>n</sup>, entonces f'(x) = n·x<sup>n-1</sup></li>
+                    <li>Si f(x) = e<sup>x</sup>, entonces f'(x) = e<sup>x</sup></li>
+                    <li>Si f(x) = ln(x), entonces f'(x) = 1/x</li>
+                    <li>Si f(x) = sin(x), entonces f'(x) = cos(x)</li>
+                </ul>
+            </div>
+        </section>
+        
+        <section id="aplicaciones">
+            <h2>Aplicaciones y Utilidad de la Derivada</h2>
+            
+            <div class="flex-container">
+                <div class="flex-item">
+                    <h3>Física</h3>
+                    <p>Las derivadas son fundamentales para describir el movimiento:</p>
+                    <ul>
+                        <li>La derivada de la posición respecto al tiempo es la <span class="highlight">velocidad</span></li>
+                        <li>La derivada de la velocidad respecto al tiempo es la <span class="highlight">aceleración</span></li>
+                    </ul>
+                    <div class="graph-container">
+                        <canvas id="physicsCanvas"></canvas>
+                    </div>
+                </div>
+                
+                <div class="flex-item">
+                    <h3>Economía</h3>
+                    <p>Las derivadas ayudan a analizar el comportamiento económico:</p>
+                    <ul>
+                        <li><span class="highlight">Costo marginal</span>: tasa de cambio del costo total respecto a la cantidad producida</li>
+                        <li><span class="highlight">Ingreso marginal</span>: cambio en el ingreso al vender una unidad adicional</li>
+                        <li><span class="highlight">Elasticidad</span>: sensibilidad de la demanda ante cambios en el precio</li>
+                    </ul>
+                    <div class="graph-container">
+                        <canvas id="economicsCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex-container">
+                <div class="flex-item">
+                    <h3>Biología y Medicina</h3>
+                    <p>Las derivadas modelan tasas de crecimiento y propagación:</p>
+                    <ul>
+                        <li>Crecimiento poblacional</li>
+                        <li>Propagación de enfermedades</li>
+                        <li>Concentración de medicamentos en la sangre</li>
+                    </ul>
+                </div>
+                
+                <div class="flex-item">
+                    <h3>Ingeniería y Tecnología</h3>
+                    <p>Las derivadas son esenciales en:</p>
+                    <ul>
+                        <li>Análisis de circuitos eléctricos</li>
+                        <li>Diseño de controladores</li>
+                        <li>Procesamiento de señales</li>
+                        <li>Aprendizaje automático (descenso de gradiente)</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="interactive-controls">
+                <label for="application-selector">Explorar aplicación:</label>
+                <select id="application-selector">
+                    <option value="physics">Física - Movimiento</option>
+                    <option value="economics">Economía - Costo Marginal</option>
+                    <option value="biology">Biología - Crecimiento</option>
+                    <option value="engineering">Ingeniería - Control</option>
+                </select>
+                <button id="show-application" class="btn-secondary">Mostrar ejemplo</button>
+                <div id="application-description" class="example-box" style="display: none;"></div>
+            </div>
+        </section>
+        
+        <section id="optimizacion">
+            <h2>Un Problema de Optimización con Derivadas</h2>
+            
+            <div class="example-box">
+                <h3>Problema: Maximizar el área de un recinto rectangular</h3>
+                <p>Un granjero dispone de 100 metros de cerca y quiere construir un recinto rectangular junto a un río. No necesita cerca en el lado del río. ¿Cuáles son las dimensiones que maximizan el área del recinto?</p>
+                
+                <div class="animation-container">
+                    <canvas id="optimizationCanvas"></canvas>
+                </div>
+            </div>
+            
+            <div class="flex-container">
+                <div class="flex-item">
+                    <h3>Planteamiento matemático</h3>
+                    <p>Si llamamos x al ancho e y al largo del recinto:</p>
+                    <ul>
+                        <li>Perímetro sin un lado: 2x + y = 100</li>
+                        <li>Despejando: y = 100 - 2x</li>
+                        <li>Área: A(x) = x·y = x(100 - 2x) = 100x - 2x²</li>
+                    </ul>
+                    
+                    <p>Para maximizar esta función, derivamos e igualamos a cero:</p>
+                    <div class="formula">
+                        A'(x) = 100 - 4x = 0<br>
+                        x = 25
+                    </div>
+                    
+                    <p>Sustituyendo: y = 100 - 2(25) = 50</p>
+                    <p class="highlight">Solución: Un rectángulo de 25m × 50m, con un área máxima de 1250m²</p>
+                </div>
+                
+                <div class="flex-item">
+                    <div class="graph-container">
+                        <canvas id="optimizationGraphCanvas"></canvas>
+                    </div>
+                    
+                    <div class="interactive-controls">
+                        <label for="rect-width">Ancho (x): <span id="width-value">25</span>m</label>
+                        <input type="range" id="rect-width" min="1" max="49" value="25">
+                        <div id="area-value">Área: 1250 m²</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <section id="grafica-derivada">
+            <h2>Relación entre la Gráfica de una Función y su Derivada</h2>
+            
+            <div class="flex-container">
+                <div class="flex-item">
+                    <p>Existe una relación geométrica clara entre una función y su derivada:</p>
+                    <ul>
+                        <li>Cuando la función <span class="highlight">crece</span>, su derivada es <span class="highlight">positiva</span></li>
+                        <li>Cuando la función <span class="highlight">decrece</span>, su derivada es <span class="highlight">negativa</span></li>
+                        <li>En los <span class="highlight">máximos y mínimos</span> locales de la función, su derivada es <span class="highlight">cero</span></li>
+                        <li>Cuando la función tiene <span class="highlight">concavidad hacia arriba</span>, su segunda derivada es <span class="highlight">positiva</span></li>
+                        <li>Cuando la función tiene <span class="highlight">concavidad hacia abajo</span>, su segunda derivada es <span class="highlight">negativa</span></li>
+                    </ul>
+                </div>
+                
+                <div class="flex-item">
+                    <div class="graph-container">
+                        <canvas id="functionDerivativeCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="interactive-controls">
+                <label for="function-selector">Selecciona una función:</label>
+                <select id="function-selector">
+                    <option value="cubic">f(x) = x³ - 3x</option>
+                    <option value="sine">f(x) = sin(x)</option>
+                    <option value="exp">f(x) = e^x</option>
+                    <option value="parabola">f(x) = x² - 4</option>
+                </select>
+                <button id="show-derivative" class="btn-secondary">Mostrar/Ocultar Derivada</button>
+            </div>
+            
+            <div class="example-box">
+                <h3>Puntos clave:</h3>
+                <p>Al observar una función y su derivada en el mismo gráfico, puedes notar que:</p>
+                <ul>
+                    <li>La derivada cruza el eje x exactamente donde la función tiene máximos o mínimos locales</li>
+                    <li>La pendiente de la función en cualquier punto es el valor de la derivada en ese punto</li>
+                    <li>Cuando la función se "aplana" (pendiente cercana a cero), la derivada se acerca al eje x</li>
+                    <li>Cuando la función cambia rápidamente, la derivada tiene valores grandes (positivos o negativos)</li>
+                </ul>
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <p>Cálculo Diferencial Interactivo - Aprende visualizando los conceptos</p>
+    </footer>
+
+    <script>
+        // Funciones de utilidad
+        function createLinearGradient(ctx, colors) {
+            const gradient = ctx.createLinearGradient(0, 0, 0, ctx.canvas.height);
+            colors.forEach((color, index) => {
+                gradient.addColorStop(index / (colors.length - 1), color);
+            });
+            return gradient;
+        }
+        
+        // Configuración de colores para gráficos
+        const colors = {
+            function: '#3498db',
+            derivative: '#e74c3c',
+            tangent: '#2ecc71',
+            secant: '#9b59b6',
+            grid: '#ecf0f1',
+            axis: '#34495e',
+            point: '#f39c12',
+            area: 'rgba(46, 204, 113, 0.2)'
+        };
+        
+        // Configuración común para Chart.js
+        Chart.defaults.font.family = "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif";
+        Chart.defaults.font.size = 14;
+        Chart.defaults.color = '#2c3e50';
+        
+        // Sección 1: Relación entre Límite y Derivada
+        const limitDerivativeCtx = document.getElementById('limitDerivativeCanvas').getContext('2d');
+        const limitDerivativeChart = new Chart(limitDerivativeCtx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'f(x) = x²',
+                        data: Array.from({length: 201}, (_, i) => {
+                            const x = (i - 100) / 25;
+                            return {x, y: x * x};
+                        }),
+                        borderColor: colors.function,
+                        backgroundColor: 'transparent',
+                        pointRadius: 0,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Tangente en x=1',
+                        data: [],
+                        borderColor: colors.tangent,
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Secante',
+                        data: [],
+                        borderColor: colors.secant,
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                aspectRatio: 1.5,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'center',
+                        grid: {
+                            color: colors.grid
+                        },
+                        ticks: {
+                            stepSize: 1
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        position: 'center',
+                        grid: {
+                            color: colors.grid
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Aproximación del límite a la derivada'
+                    }
+                }
+            }
+        });
+        
+        function updateSecantLine(h) {
+            const x0 = 1;
+            const y0 = x0 * x0;
+            const x1 = x0 + h;
+            const y1 = x1 * x1;
+            const slope = (y1 - y0) / (x1 - x0);
+            
+            // Actualizar línea secante
+            limitDerivativeChart.data.datasets[2].data = [
+                {x: x0 - 1, y: y0 - slope},
+                {x: x1 + 1, y: y1 + slope}
+            ];
+            
+            // Actualizar línea tangente (derivada real en x=1 que es 2x = 2)
+            const tanSlope = 2;
+            limitDerivativeChart.data.datasets[1].data = [
+                {x: x0 - 1, y: y0 - tanSlope},
+                {x: x0 + 1, y: y0 + tanSlope}
+            ];
+            
+            document.getElementById('h-display').textContent = h.toFixed(2);
+            limitDerivativeChart.update();
+        }
+        
+        document.getElementById('h-value').addEventListener('input', function() {
+            updateSecantLine(parseFloat(this.value));
+        });
+        
+        document.getElementById('animate-limit').addEventListener('click', function() {
+            let h = 1.0;
+            const interval = setInterval(() => {
+                h *= 0.9;
+                if (h < 0.01) {
+                    clearInterval(interval);
+                    h = 0.01;
+                }
+                document.getElementById('h-value').value = h;
+                updateSecantLine(h);
+            }, 100);
+        });
+        
+        // Inicialización
+        updateSecantLine(1);
+        
+        // Sección 2: Definición de Derivada
+        const derivativeDefinitionCtx = document.getElementById('derivativeDefinitionCanvas').getContext('2d');
+        const derivativeDefinitionChart = new Chart(derivativeDefinitionCtx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'f(x) = x² - 2x',
+                        data: Array.from({length: 201}, (_, i) => {
+                            const x = (i - 100) / 25;
+                            return {x, y: x * x - 2 * x};
+                        }),
+                        borderColor: colors.function,
+                        backgroundColor: 'transparent',
+                        pointRadius: 0,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Tangente',
+                        data: [],
+                        borderColor: colors.tangent,
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Punto',
+                        data: [],
+                        borderColor: colors.point,
+                        backgroundColor: colors.point,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        showLine: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                aspectRatio: 1.5,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'center',
+                        grid: {
+                            color: colors.grid
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        position: 'center',
+                        grid: {
+                            color: colors.grid
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'La derivada como pendiente de la tangente'
+                    }
+                }
+            }
+        });
+        
+        function updateTangentLine(x0) {
+            // Función f(x) = x² - 2x
+            const y0 = x0 * x0 - 2 * x0;
+            
+            // Derivada f'(x) = 2x - 2
+            const slope = 2 * x0 - 2;
+            
+            // Actualizar línea tangente
+            const xRange = 2;
+            derivativeDefinitionChart.data.datasets[1].data = [
+                {x: x0 - xRange, y: y0 - slope * xRange},
+                {x: x0 + xRange, y: y0 + slope * xRange}
+            ];
+            
+            // Actualizar punto
+            derivativeDefinitionChart.data.datasets[2].data = [{x: x0, y: y0}];
+            
+            document.getElementById('point-value').textContent = x0.toFixed(1);
+            document.getElementById('slope-value').textContent = `Pendiente: ${slope.toFixed(1)}`;
+            
+            derivativeDefinitionChart.update();
+        }
+        
+        document.getElementById('point-selector').addEventListener('input', function() {
+            updateTangentLine(parseFloat(this.value));
+        });
+        
+        // Inicialización
+        updateTangentLine(0);
+        
+        // Sección 3: Aplicaciones de la Derivada
+        const physicsCtx = document.getElementById('physicsCanvas').getContext('2d');
+        const physicsChart = new Chart(physicsCtx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'Posición',
+                        data: Array.from({length: 101}, (_, i) => {
+                            const t = i / 10;
+                            return {x: t, y: 2 * t * t};
+                        }),
+                        borderColor: colors.function,
+                        backgroundColor: 'transparent',
+                        pointRadius: 0,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Velocidad (derivada)',
+                        data: Array.from({length: 101}, (_, i) => {
+                            const t = i / 10;
+                            return {x: t, y: 4 * t};
+                        }),
+                        borderColor: colors.derivative,
+                        backgroundColor: 'transparent',
+                        pointRadius: 0,
+                        borderDash: [5, 5]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                aspectRatio: 1.5,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Tiempo (s)'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Posición (m) / Velocidad (m/s)'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Física: Posición y su derivada (velocidad)'
+                    }
+                }
+            }
+        });
+        
+        const economicsCtx = document.getElementById('economicsCanvas').getContext('2d');
+        const economicsChart = new Chart(economicsCtx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'Costo Total',
+                        data: Array.from({length: 101}, (_, i) => {
+                            const q = i;
+                            // Función de costo: 100 + 10q - 0.1q² + 0.01q³
+                            return {x: q, y: 100 + 10 * q - 0.1 * q * q + 0.01 * q * q * q};
+                        }),
+                        borderColor: colors.function,
+                        backgroundColor: 'transparent',
+                        pointRadius: 0,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Costo Marginal (derivada)',
+                        data: Array.from({length: 101}, (_, i) => {
+                            const q = i;
+                            // Derivada: 10 - 0.2q + 0.03q²
+                            return {x: q, y: 10 - 0.2 * q + 0.03 * q * q};
+                        }),
+                        borderColor: colors.derivative,
+                        backgroundColor: 'transparent',
+                        pointRadius: 0,
+                        borderDash: [5, 5]
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                aspectRatio: 1.5,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Cantidad (unidades)'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Costo ($)'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Economía: Costo total y Costo marginal'
+                    }
+                }
+            }
+        });
+        
+        // Aplicaciones interactivas
+        const applicationDescriptions = {
+            physics: `<h4>Física - Movimiento</h4>
+                    <p>Si s(t) es la posición de un objeto en función del tiempo, entonces:</p>
+                    <ul>
+                        <li>v(t) = s'(t) es la velocidad instantánea</li>
+                        <li>a(t) = v'(t) = s''(t) es la aceleración instantánea</li>
+                    </ul>
+                    <p>Ejemplo: Si s(t) = 2t², entonces v(t) = 4t y a(t) = 4</p>
+                    <p>Esto describe un movimiento con aceleración constante, como la caída libre.</p>`,
+            
+            economics: `<h4>Economía - Costos marginales</h4>
+                       <p>Si C(q) es la función de costo total para producir q unidades:</p>
+                       <ul>
+                           <li>C'(q) es el costo marginal: el costo adicional de producir una unidad más</li>
+                           <li>Los puntos donde C'(q) es mínimo representan la cantidad más eficiente para producir</li>
+                       </ul>
+                       <p>Las empresas maximizan beneficios cuando el ingreso marginal iguala al costo marginal: R'(q) = C'(q)</p>`,
+            
+            biology: `<h4>Biología - Crecimiento poblacional</h4>
+                     <p>Si P(t) es el tamaño de una población en el tiempo t:</p>
+                     <ul>
+                         <li>P'(t) representa la tasa de crecimiento instantáneo</li>
+                         <li>El modelo logístico P(t) = K/(1+Ae<sup>-rt</sup>) tiene una derivada que muestra crecimiento 
+                         inicialmente acelerado seguido de una desaceleración a medida que se acerca a la capacidad de carga K</li>
+                     </ul>
+                     <p>Este modelo describe poblaciones biológicas, propagación de enfermedades y adopción de nuevas tecnologías.</p>`,
+            
+            engineering: `<h4>Ingeniería - Control de sistemas</h4>
+                         <p>En sistemas de control:</p>
+                         <ul>
+                             <li>El controlador PID utiliza la derivada del error e'(t) para anticipar tendencias futuras</li>
+                             <li>Un controlador derivativo responde a la tasa de cambio del error, amortiguando oscilaciones</li>
+                         </ul>
+                         <p>Por ejemplo, en un sistema de climatización, la derivada ayuda a evitar el sobrecalentamiento 
+                         o sobreenfriamiento al anticipar cuán rápido cambia la temperatura.</p>`
+        };
+        
+        document.getElementById('show-application').addEventListener('click', function() {
+            const selectedApp = document.getElementById('application-selector').value;
+            const descriptionDiv = document.getElementById('application-description');
+            descriptionDiv.innerHTML = applicationDescriptions[selectedApp];
+            descriptionDiv.style.display = 'block';
+            descriptionDiv.classList.add('fade-in');
+        });
+        
+        // Sección 4: Optimización
+        const optimizationCtx = document.getElementById('optimizationCanvas').getContext('2d');
+        let optimizationAnimation;
+        
+        function drawOptimizationProblem(width) {
+            const ctx = optimizationCtx;
+            const canvas = ctx.canvas;
+            const height = canvas.height;
+            const riverHeight = height * 0.8;
+            
+            // Limpiar canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Dibujar río
+            const gradient = ctx.createLinearGradient(0, riverHeight, 0, height);
+            gradient.addColorStop(0, '#3498db');
+            gradient.addColorStop(1, '#2980b9');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, riverHeight, canvas.width, height - riverHeight);
+            
+            // Ondas del río
+            ctx.beginPath();
+            ctx.moveTo(0, riverHeight);
+            for (let x = 0; x < canvas.width; x += 10) {
+                ctx.lineTo(x, riverHeight - 3 * Math.sin(x / 20));
+            }
+            ctx.lineTo(canvas.width, riverHeight);
+            ctx.strokeStyle = '#74b9ff';
+            ctx.stroke();
+            
+            // Calcular dimensiones en escala
+            const scale = Math.min(canvas.width, riverHeight) / 150;
+            const rectWidth = width * scale;
+            const rectHeight = (100 - 2 * width) * scale;
+            const x = (canvas.width - rectWidth) / 2;
+            const y = riverHeight - rectHeight;
+            
+            // Dibujar cerca
+            ctx.strokeStyle = '#e67e22';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x, riverHeight);
+            ctx.lineTo(x, y);
+            ctx.lineTo(x + rectWidth, y);
+            ctx.lineTo(x + rectWidth, riverHeight);
+            ctx.stroke();
+            
+            // Dibujar área
+            ctx.fillStyle = 'rgba(46, 204, 113, 0.2)';
+            ctx.fillRect(x, y, rectWidth, rectHeight);
+            
+            // Etiquetas
+            ctx.fillStyle = '#2c3e50';
+            ctx.font = '16px Segoe UI';
+            ctx.fillText(`Ancho: ${width}m`, x + rectWidth / 2 - 40, y + rectHeight / 2);
+            ctx.fillText(`Largo: ${100 - 2 * width}m`, x + rectWidth / 2 - 40, y + rectHeight / 2 + 24);
+            ctx.fillText(`Área: ${width * (100 - 2 * width)}m²`, x + rectWidth / 2 - 40, y + rectHeight / 2 + 48);
+            
+            ctx.font = '18px Segoe UI';
+            ctx.fillText("Río", canvas.width / 2 - 15, canvas.height - 20);
+        }
+        
+        const optimizationGraphCtx = document.getElementById('optimizationGraphCanvas').getContext('2d');
+        const optimizationGraphChart = new Chart(optimizationGraphCtx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'Área A(x) = x(100-2x)',
+                        data: Array.from({length: 51}, (_, i) => {
+                            const x = i;
+                            return {x, y: x * (100 - 2 * x)};
+                        }),
+                        borderColor: colors.function,
+                        backgroundColor: createLinearGradient(optimizationGraphCtx, [
+                            'rgba(52, 152, 219, 0.1)',
+                            'rgba(52, 152, 219, 0.4)'
+                        ]),
+                        pointRadius: 0,
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'Punto actual',
+                        data: [{ x: 25, y: 25 * (100 - 2 * 25) }],
+                        borderColor: colors.point,
+                        backgroundColor: colors.point,
+                        pointRadius: 8,
+                        pointHoverRadius: 10
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                aspectRatio: 1.5,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        title: {
+                            display: true,
+                            text: 'Ancho (metros)'
+                        },
+                        min: 0,
+                        max: 50
+                    },
+                    y: {
+                        type: 'linear',
+                        title: {
+                            display: true,
+                            text: 'Área (metros²)'
+                        },
+                        min: 0
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Área en función del ancho'
+                    },
+                    annotation: {
+                        annotations: {
+                            line1: {
+                                type: 'line',
+                                yMin: 0,
+                                yMax: 1250,
+                                xMin: 25,
+                                xMax: 25,
+                                borderColor: 'rgba(231, 76, 60, 0.5)',
+                                borderWidth: 2,
+                                borderDash: [5, 5],
+                                label: {
+                                    content: 'Máximo en x=25',
+                                    enabled: true
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+        document.getElementById('rect-width').addEventListener('input', function() {
+            const width = parseInt(this.value);
+            const area = width * (100 - 2 * width);
+            
+            document.getElementById('width-value').textContent = width;
+            document.getElementById('area-value').textContent = `Área: ${area} m²`;
+            
+            // Actualizar gráfico de área
+            optimizationGraphChart.data.datasets[1].data = [{ x: width, y: area }];
+            optimizationGraphChart.update();
+            
+            // Actualizar visualización del problema
+            drawOptimizationProblem(width);
+        });
+        
+        // Sección 5: Función y su derivada
+        const functionDerivativeCtx = document.getElementById('functionDerivativeCanvas').getContext('2d');
+        let functionDerivativeChart = new Chart(functionDerivativeCtx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'f(x) = x³ - 3x',
+                        data: Array.from({length: 201}, (_, i) => {
+                            const x = (i - 100) / 25;
+                            return {x, y: Math.pow(x, 3) - 3 * x};
+                        }),
+                        borderColor: colors.function,
+                        backgroundColor: 'transparent',
+                        pointRadius: 0,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'f\'(x) = 3x² - 3',
+                        data: Array.from({length: 201}, (_, i) => {
+                            const x = (i - 100) / 25;
+                            return {x, y: 3 * Math.pow(x, 2) - 3};
+                        }),
+                        borderColor: colors.derivative,
+                        backgroundColor: 'transparent',
+                        pointRadius: 0,
+                        borderDash: [5, 5],
+                        hidden: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                aspectRatio: 1.5,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'center',
+                        grid: {
+                            color: colors.grid
+                        }
+                    },
+                    y: {
+                        type: 'linear',
+                        position: 'center',
+                        grid: {
+                            color: colors.grid
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Función y su derivada'
+                    }
+                }
+            }
+        });
+        
+        const functions = {
+            cubic: {
+                f: x => Math.pow(x, 3) - 3 * x,
+                df: x => 3 * Math.pow(x, 2) - 3,
+                title: 'f(x) = x³ - 3x'
+            },
+            sine: {
+                f: x => Math.sin(x),
+                df: x => Math.cos(x),
+                title: 'f(x) = sin(x)'
+            },
+            exp: {
+                f: x => Math.exp(x),
+                df: x => Math.exp(x),
+                title: 'f(x) = e^x'
+            },
+            parabola: {
+                f: x => Math.pow(x, 2) - 4,
+                df: x => 2 * x,
+                title: 'f(x) = x² - 4'
+            }
+        };
+        
+        function updateFunctionDerivative(funcName) {
+            const func = functions[funcName];
+            const xMin = funcName === 'exp' ? -4 : -4;
+            const xMax = funcName === 'exp' ? 2 : 4;
+            
+            // Generar datos
+            const data = Array.from({length: 201}, (_, i) => {
+                const x = xMin + (xMax - xMin) * i / 200;
+                return {x, y: func.f(x)};
+            });
+            
+            const derivData = Array.from({length: 201}, (_, i) => {
+                const x = xMin + (xMax - xMin) * i / 200;
+                return {x, y: func.df(x)};
+            });
+            
+            // Actualizar gráfico
+            functionDerivativeChart.data.datasets[0].data = data;
+            functionDerivativeChart.data.datasets[0].label = func.title;
+            
+            functionDerivativeChart.data.datasets[1].data = derivData;
+            functionDerivativeChart.data.datasets[1].label = `Derivada de ${func.title}`;
+            
+            functionDerivativeChart.options.scales.x.min = xMin;
+            functionDerivativeChart.options.scales.x.max = xMax;
+            
+            functionDerivativeChart.update();
+        }
+        
+        document.getElementById('function-selector').addEventListener('change', function() {
+            updateFunctionDerivative(this.value);
+        });
+        
+        document.getElementById('show-derivative').addEventListener('click', function() {
+            const isHidden = functionDerivativeChart.data.datasets[1].hidden;
+            functionDerivativeChart.data.datasets[1].hidden = !isHidden;
+            functionDerivativeChart.update();
+        });
+        
+        // Inicializar visualizaciones
+        updateFunctionDerivative('cubic');
+        drawOptimizationProblem(25);
+        
+        // Efecto de revelación al hacer scroll
+        function revealSections() {
+            const sections = document.querySelectorAll('section');
+            sections.forEach(section => {
+                const sectionTop = section.getBoundingClientRect().top;
+                const windowHeight = window.innerHeight;
+                if (sectionTop < windowHeight * 0.75) {
+                    section.classList.add('visible');
+                }
+            });
+        }
+        
+        window.addEventListener('scroll', revealSections);
+        window.addEventListener('load', revealSections);
+        
+        // Navegación activa
+        function updateActiveNav() {
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+            
+            let currentSectionId = '';
+            sections.forEach(section => {
+                const sectionTop = section.getBoundingClientRect().top;
+                if (sectionTop < window.innerHeight * 0.3) {
+                    currentSectionId = section.id;
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href').slice(1) === currentSectionId) {
+                    link.classList.add('active');
+                }
+            });
+        }
+        
+        window.addEventListener('scroll', updateActiveNav);
+        window.addEventListener('load', updateActiveNav);
+        
+        // Navegación suave al hacer clic en los enlaces
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').slice(1);
+                const targetElement = document.getElementById(targetId);
+                window.scrollTo({
+                    top: targetElement.offsetTop - 70,
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
+                
